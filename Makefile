@@ -1,5 +1,5 @@
-AR = ar
-CC = gcc
+AR ?= ar
+CC ?= gcc
 CFLAGS ?= -Wall -Os -fPIC
 LDFLAGS = -L.
 SHLIB_CFLAGS = -shared
@@ -14,11 +14,11 @@ MINOR = 0
 MICRO = 0
 
 NAME = json
-A_TARGETS = lib$(NAME).a
-BIN_TARGETS = $(NAME)lint
+A_TARGETS = $(LIBPREF)$(NAME).a
+BIN_TARGETS = $(NAME)lint$(EXEEXT)
 PC_TARGET = lib$(NAME).pc
-SO_LINKS = lib$(NAME).so lib$(NAME).so.$(MAJOR) lib$(NAME).so.$(MAJOR).$(MINOR)
-SO_FILE = lib$(NAME).so.$(MAJOR).$(MINOR).$(MICRO)
+SO_LINKS = $(LIBPREF)$(NAME)$(SOEXT) $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR) $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR) $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR).$(MICRO)
+SO_FILE = $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR).$(MICRO)
 HEADERS = $(NAME).h
 
 PREFIX ?= /usr
@@ -27,24 +27,38 @@ INSTALLDIR ?= $(DESTDIR)$(PREFIX)
 
 TARGETS = $(A_TARGETS) $(SO_FILE) $(SO_LINKS) $(BIN_TARGETS) $(PC_TARGET)
 
+ifeq ($(findstring mingw32,$(CC)),)
+EXEEXT=
+LIBPREF=lib
+LN = ln
+LNFLAGS = -sf
+SOEXT = .so
+else
+EXEEXT=.exe
+LIBPREF=
+LN = mv
+LNFLAGS= -f
+SOEXT = .dll
+endif
+
 all: $(TARGETS)
 
-lib$(NAME).a: $(NAME).o
+$(LIBPREF)$(NAME).a: $(NAME).o
 	$(AR) rc $@ $+
 
-lib$(NAME).so: lib$(NAME).so.$(MAJOR)
-	ln -sf $< $@
+$(LIBPREF)$(NAME)$(SOEXT): $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR)
+	$(LN) $(LNFLAGS) $< $@
 
-lib$(NAME).so.$(MAJOR): lib$(NAME).so.$(MAJOR).$(MINOR)
-	ln -sf $< $@
+$(LIBPREF)$(NAME)$(SOEXT).$(MAJOR): $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR)
+	$(LN) $(LNFLAGS) $< $@
 
-lib$(NAME).so.$(MAJOR).$(MINOR): lib$(NAME).so.$(MAJOR).$(MINOR).$(MICRO)
-	ln -sf $< $@
+$(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR): $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR).$(MICRO)
+	$(LN) $(LNFLAGS) $< $@
 
-lib$(NAME).so.$(MAJOR).$(MINOR).$(MICRO): $(NAME).o
-	$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-soname -Wl,lib$(NAME).so.$(MAJOR).$(MINOR).$(MICRO) $(SHLIB_CFLAGS) -o $@ $^
+$(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR).$(MICRO): $(NAME).o
+	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o $@ $^
 
-$(NAME)lint: $(NAME)lint.o $(NAME).o
+$(NAME)lint$(EXEEXT): $(NAME)lint.o $(NAME).o
 	$(CC) $(CFLAGS) -o $@ $+
 
 %.o: %.c %.h
@@ -55,7 +69,7 @@ lib$(NAME).pc: lib$(NAME).pc.in
 	sed -e 's;@PREFIX@;$(PREFIX);' -e 's;@LIBJSON_VER_MAJOR@;$(MAJOR);' -e 's;@LIBJSON_VER_MINOR@;$(MINOR);' < $< > $@
 
 .PHONY: tests clean install install-bin install-lib
-tests: $(NAME)lint
+tests: $(NAME)lint$(EXEXT)
 	(cd tests; ./runtest)
 
 install-lib: $(SO_TARGETS) $(A_TARGETS) $(PC_TARGET)
