@@ -1,8 +1,31 @@
 AR ?= ar
-CC ?= gcc
+CC = gcc
 CFLAGS ?= -Wall -Os -fPIC
+PC ?= fpc
+PCFAGS ?=
 LDFLAGS = -L.
 SHLIB_CFLAGS = -shared
+
+# Only Free Pascal and GNU Pascal are current supported
+ifeq ($(PC),fpc)
+PCINTEXT = .ppu
+PCIMPLEXT = .o
+PCUNITSDIR ?= $(PREFIX)/lib/fpc/$(shell $(PC) -iV)/units/$(shell $(PC) $(PCFLAGS) -iTP)-$(shell $(PC) $(PCFLAGS) -iTO)/libjson
+else
+ifeq ($(PC),gpc)
+PCINTEXT = .gpi
+PCIMPLEXT = .o
+PCUNITSDIR ?= $(shell $(PC) -print-file-name=units)
+override PCFLAGS+=-c -Wno-warnings
+else
+ifeq ($(PC),pc)
+$(warning PC is set to pc, which is probably unavailable.  Try setting it if you want to fpc or gpc to build the Pascal binding.)
+PCINTEXT = .o
+PCIMPLEXT = .o
+PCUNITSDIR ?= $(INSTALLDIR)/include
+endif
+endif
+endif
 
 INSTALL_EXEC = install -m 755 -o root -g root
 INSTALL_DATA = install -m 644 -o root -g root
@@ -27,7 +50,7 @@ INSTALLDIR ?= $(DESTDIR)$(PREFIX)
 
 TARGETS = $(A_TARGETS) $(SO_FILE) $(SO_LINKS) $(BIN_TARGETS) $(PC_TARGET)
 
-ifeq ($(findstring mingw32,$(CC)),)
+ifeq ($(findstring mingw32,(shell $(CC) -dumpmachine)),)
 EXEEXT=
 LIBPREF=lib
 LN = ln
@@ -41,9 +64,14 @@ LNFLAGS= -f
 SOEXT = .dll
 endif
 
-all: $(TARGETS)
+COBJEXT = .cobj
 
-$(LIBPREF)$(NAME).a: $(NAME).o
+all: $(TARGETS) json$(PCINTEXT)
+
+json$(PCINTEXT): json.pas
+	-$(PC) $(PCFLAGS) $^
+
+$(LIBPREF)$(NAME).a: $(NAME)$(COBJEXT)
 	$(AR) rc $@ $+
 
 $(LIBPREF)$(NAME)$(SOEXT): $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR)
@@ -55,13 +83,16 @@ $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR): $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR)
 $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR): $(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR).$(MICRO)
 	$(LN) $(LNFLAGS) $< $@
 
-$(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR).$(MICRO): $(NAME).o
+$(LIBPREF)$(NAME)$(SOEXT).$(MAJOR).$(MINOR).$(MICRO): $(NAME)$(COBJEXT)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o $@ $^
 
-$(NAME)lint$(EXEEXT): $(NAME)lint.o $(NAME).o
+$(NAME)lint$(EXEEXT): $(NAME)lint$(COBJEXT) $(NAME)$(COBJEXT)
 	$(CC) $(CFLAGS) -o $@ $+
 
-%.o: %.c %.h
+$(NAME)lint$(COBJEXT): $(NAME)lint.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%$(COBJEXT): %.c %.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 .PHONY: lib$(NAME).pc
@@ -81,6 +112,8 @@ install-lib: $(SO_TARGETS) $(A_TARGETS) $(PC_TARGET)
 	$(INSTALL_EXEC) -t $(INSTALLDIR)/lib $(SO_FILE)
 	$(INSTALL_DATA) -t $(INSTALLDIR)/lib $(A_TARGETS)
 	$(INSTALL_SOLINKS) $(SO_LINKS) $(INSTALLDIR)/lib
+	mkdir -p $(PCUNITSDIR)
+	-$(INSTALL_DATA) -m 644 json$(PCINTEXT) json$(PCIMPLEXT) $(PCUNITSDIR)
 
 install-bin: $(BIN_TARGETS)
 	mkdir -p $(INSTALLDIR)/bin
@@ -89,4 +122,5 @@ install-bin: $(BIN_TARGETS)
 install: install-lib install-bin
 
 clean:
-	rm -f *.o $(TARGETS)
+	rm -f *$(COBJEXT) $(TARGETS)
+	rm -f json$(PCINTEXT) json$(PCIMPLEXT)
