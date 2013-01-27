@@ -19,7 +19,7 @@ PCUNITSDIR ?= $(shell $(PC) -print-file-name=units)
 override PCFLAGS+=-c -Wno-warnings
 else
 ifeq ($(PC),pc)
-$(warning PC is set to pc, which is probably unavailable.  Try setting it if you want to fpc or gpc to build the Pascal binding.)
+$(warning PC is set to pc, which is probably unavailable.  Try setting it if you want fpc or gpc to build the Pascal binding.)
 PCINTEXT = .o
 PCIMPLEXT = .o
 PCUNITSDIR ?= $(INSTALLDIR)/include
