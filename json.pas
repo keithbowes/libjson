@@ -18,18 +18,8 @@ interface
 
 {$IFDEF FPC}
 {$calling cdecl}
+{$DEFINE DELPHI}
 {$PACKRECORDS C}
-{$ENDIF}
-
-{$IFNDEF LINK_DYNAMIC}
-{$LINKLIB libjson.a}
-{$IFDEF UNIX}
-{$LINKLIB c}
-{$ELSE}
-{$IFDEF WINDOWS}
-{$LINKLIB msvcrt}
-{$ENDIF}
-{$ENDIF}
 {$ENDIF}
 
 type
@@ -115,36 +105,32 @@ const
           first : longint;
         end;
 
-function json_parser_init(parser:Pjson_parser; cfg:Pjson_config; callback:json_parser_callback; userdata:pointer):json_error;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_parser_init(parser:Pjson_parser; cfg:Pjson_config; callback:json_parser_callback; userdata:pointer):json_error;external 'json';
 
-function json_parser_free(parser:Pjson_parser):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_parser_free(parser:Pjson_parser):longint;external 'json';
 
-function json_parser_string(parser:Pjson_parser; _string:Pchar; _length:cardinal; processed:Pcardinal):json_error;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_parser_string(parser:Pjson_parser; _string:Pchar; _length:cardinal; processed:Pcardinal):json_error;external 'json';
 
-function json_parser_char(parser:Pjson_parser; next_char:char):json_error;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_parser_char(parser:Pjson_parser; next_char:char):json_error;external 'json';
 
-function json_parser_is_done(parser:Pjson_parser):bytebool;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_parser_is_done(parser:Pjson_parser):bytebool;external 'json';
 
-function json_print_init(printer:Pjson_printer; callback:json_printer_callback; userdata:pointer):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_print_init(printer:Pjson_printer; callback:json_printer_callback; userdata:pointer):longint;external 'json';
 
-function json_print_free(printer:Pjson_printer):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_print_free(printer:Pjson_printer):longint;external 'json';
 
-function json_print_pretty(printer:Pjson_printer; _type:longint; data:Pchar; _length:cardinal):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_print_pretty(printer:Pjson_printer; _type:longint; data:Pchar; _length:cardinal):longint;external 'json';
 
-function json_print_raw(printer:Pjson_printer; _type:longint; data:Pchar; _length:cardinal):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
-
-{$IFDEF FPC}
-{$DEFINE DELPHI}
-{$ENDIF}
+function json_print_raw(printer:Pjson_printer; _type:longint; data:Pchar; _length:cardinal):longint;external 'json';
 
 type
   json_print_args_callback = function(_para1:pjson_printer;_para2:longint;_para3:pchar;_para4:cardinal):longint;
 
 {$IFDEF DELPHI}
-function json_print_args(_para1:Pjson_printer; f:json_print_args_callback; args:array of const):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_print_args(_para1:Pjson_printer; f:json_print_args_callback; args:array of const):longint;external 'json';
 {$ELSE}
 {$IFDEF __GPC__}
-function json_print_args(_para1:Pjson_printer; f:json_print_args_callback; ...):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_print_args(_para1:Pjson_printer; f:json_print_args_callback; ...):longint;external 'json';
 {$ENDIF}
 {$ENDIF}
 
@@ -176,11 +162,11 @@ function json_print_args(_para1:Pjson_printer; f:json_print_args_callback; ...):
           _append : json_parser_dom_append;
         end;
 
-function json_parser_dom_init(helper:Pjson_parser_dom; create_structure:json_parser_dom_create_structure; create_data:json_parser_dom_create_data; _append:json_parser_dom_append):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_parser_dom_init(helper:Pjson_parser_dom; create_structure:json_parser_dom_create_structure; create_data:json_parser_dom_create_data; _append:json_parser_dom_append):longint;external 'json';
 
-function json_parser_dom_free(ctx:Pjson_parser_dom):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_parser_dom_free(ctx:Pjson_parser_dom):longint;external 'json';
 
-function json_parser_dom_callback(userdata:pointer; _type:longint; data:Pchar; _length:cardinal):longint;external{$IFDEF LINK_DYNAMIC} 'json'{$ENDIF};
+function json_parser_dom_callback(userdata:pointer; _type:longint; data:Pchar; _length:cardinal):longint;external 'json';
 
 implementation
 
