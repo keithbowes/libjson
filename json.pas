@@ -19,6 +19,7 @@ interface
 {$IFDEF FPC}
 {$calling cdecl}
 {$DEFINE DELPHI}
+{$MODE OBJFPC}
 {$PACKRECORDS C}
 {$ENDIF}
 
